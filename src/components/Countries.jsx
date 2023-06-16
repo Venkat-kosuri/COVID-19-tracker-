@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import Axios from "../Axios";
 
@@ -26,7 +26,7 @@ const Countries = () => {
 
       const res = await Axios.get("history", { params });
 
-      setData(res.data);
+      setData((prevData) => ({ ...prevData, [params.country]: res.data }));
 
     } catch (error) {
 
@@ -102,7 +102,7 @@ const Countries = () => {
 
   };
 
-  const handleSearch = (event) => {
+  const handleSearch = async (event) => {
 
     const searchTerm = event.target.value.toLowerCase();
 
@@ -114,13 +114,23 @@ const Countries = () => {
 
     } else {
 
-      const searchedCountry = countries.find((country) =>
+      try {
 
-        country.toLowerCase().includes(searchTerm)
+        const res = await Axios.get("history", { params: { country: searchTerm } });
 
-      );
+        setSearchedCountry(searchTerm);
 
-      setSearchedCountry(searchedCountry);
+        setData((prevData) => ({ ...prevData, [searchTerm]: res.data }));
+
+      } catch (error) {
+
+        console.log(error);
+
+        setSearchedCountry(null);
+
+        setData((prevData) => ({ ...prevData, [searchTerm]: null }));
+
+      }
 
     }
 
@@ -198,9 +208,21 @@ const Countries = () => {
 
           <h2 className="text-xl font-bold mb-2">{searchedCountry}</h2>
 
-          <p>Population: {data?.[searchedCountry]?.response?.[0]?.population}</p>
+          {data?.[searchedCountry] ? (
 
-          <p>Total Covid Cases: {data?.[searchedCountry]?.response?.[0]?.cases?.total}</p>
+            <>
+
+              <p>Population: {data?.[searchedCountry]?.response?.[0]?.population}</p>
+
+              <p>Total Covid Cases: {data?.[searchedCountry]?.response?.[0]?.cases?.total}</p>
+
+            </>
+
+          ) : (
+
+            <p>No data available for {searchedCountry}</p>
+
+          )}
 
         </div>
 
@@ -208,75 +230,73 @@ const Countries = () => {
 
         <div className="grid gap-3 justify-center sm:grid-cols-2 lg:grid-cols-3">
 
-        {currentCountries.map((country, index) => (
+          {currentCountries.map((country, index) => (
 
-          <div key={index} className="mb-4">
+            <div key={index} className="mb-4">
 
-            <div className="flex flex-wrap">
+              <div className="flex flex-wrap">
 
-              <button
+                <button
 
-                onClick={() => handleContinentToggle(country)}
+                  onClick={() => handleContinentToggle(country)}
 
-                className="bg-blue-500 text-white px-2 py-1 rounded"
+                  className="bg-blue-500 text-white px-2 py-1 rounded"
 
-              >
+                >
 
-                {expandedContinents.includes(country) ? "-" : "+"}
+                  {expandedContinents.includes(country) ? "-" : "+"}
 
-              </button>
+                </button>
 
-              <h2 className="text-xl font-bold mt-2 px-3">{country}</h2>
+                <h2 className="text-xl font-bold mt-2 px-3">{country}</h2>
 
-            </div>
+              </div>
 
-            {expandedContinents.includes(country) && (
+              {expandedContinents.includes(country) && (
 
-              <table className="mt-2 w-full border-collapse py-5">
+                <table className="mt-2 w-full border-collapse py-5">
 
-                <thead>
+                  <thead>
 
-                  <tr>
+                    <tr>
 
-                    <th className="px-4 py-2 border">Country</th>
+                      <th className="px-4 py-2 border">Country</th>
 
-                    <th className="px-4 py-2 border">Population</th>
+                      <th className="px-4 py-2 border">Population</th>
 
-                    <th className="px-4 py-2 border">Total Covid Cases</th>
-
-                  </tr>
-
-                </thead>
-
-                <tbody>
-
-                  {data?.[country]?.response?.slice(0, 1).map((item, index) => (
-
-                    <tr key={index}>
-
-                      <td className="border px-4 py-2">{item.country}</td>
-
-                      <td className="border px-4 py-2">{item.population}</td>
-
-                      <td className="border px-4 py-2">{item.cases.total}</td>
+                      <th className="px-4 py-2 border">Total Covid Cases</th>
 
                     </tr>
 
-                  ))}
+                  </thead>
 
-                </tbody>
+                  <tbody>
 
-              </table>
+                    {data?.[country]?.response?.slice(0, 1).map((item, index) => (
 
-            )}
+                      <tr key={index}>
 
-          </div>
+                        <td className="border px-4 py-2">{item.country}</td>
 
-        ))}
+                        <td className="border px-4 py-2">{item.population}</td>
 
-      </div>
+                        <td className="border px-4 py-2">{item.cases.total}</td>
 
-      
+                      </tr>
+
+                    ))}
+
+                  </tbody>
+
+                </table>
+
+              )}
+
+            </div>
+
+          ))}
+
+        </div>
 
       )}
 
